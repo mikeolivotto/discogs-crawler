@@ -2,6 +2,8 @@ const axios = require("axios");
 var Bottleneck = require("bottleneck/es5");
 fs = require("fs");
 
+const { argv } = require('process');
+
 const max25pm = new Bottleneck({
   minTime: 2600, // 1000 ms per minute
 });
@@ -14,7 +16,7 @@ const getArtistAPI = async (id) => {
 const getArtist = max25pm.wrap(getArtistAPI);
 
 // [band id, band name]
-let bands = { 355457: "Alexisonfire" };
+let bands = {};
 
 // [band id, person id]... {band: [members]}
 let bandsMembers = {};
@@ -30,7 +32,7 @@ const getBand = async (bandId) => {
     console.log(`Adding band ${response.data.name}`);
     !bands[bandId] && (bands[bandId] = response.data.name);
   } catch (err) {
-    console.log(`could not retrieve band ${bandId}`);
+    console.log(`Could not retrieve band with ID '${bandId}'`);
   }
 };
 
@@ -84,33 +86,36 @@ const getBandMembers = async () => {
   console.log("iterated though getBandMembers");
 };
 
-// getBandMembers(355457);
 
 const spider = async (seedBandId) => {
   await getBand(seedBandId);
-  while (Object.keys(bands).length < maxBandsToReturn) {
-    await getBands(); // Go through 'musicians' list and get all bands they belong to. Eg AOF = 13 other bands
-    await getBandMembers(); // Go through 'bands' list and get all their members 
+
+  if (Object.keys(bands).length > 0) {
+      while (Object.keys(bands).length < maxBandsToReturn) {
+        await getBands(); // Go through 'musicians' list and get all bands they belong to. Eg AOF = 13 other bands
+        await getBandMembers(); // Go through 'bands' list and get all their members 
+      }
+      const bandsJSON = JSON.stringify(bands);
+      fs.writeFile(`${seedBandId}-bands.json`, bandsJSON, function (err) {
+        err ? console.log(err) : console.log("Bands JSON file saved");
+    
+      });
+    
+      const bandsMembersJSON = JSON.stringify(bandsMembers);
+      fs.writeFile(`${seedBandId}-bandsMembers.json`, bandsMembersJSON, function (err) {
+        err ? console.log(err) : console.log("Bands-Members JSON file saved");
+      });
+    
+      const musiciansJSON = JSON.stringify(musicians);
+      fs.writeFile(`${seedBandId}-musicians.json`, musiciansJSON, function (err) {
+        err ? console.log(err) : console.log("Musicians JSON file saved");
+      });
   }
 
-  const bandsJSON = JSON.stringify(bands);
-  fs.writeFile(`${seedBandId}-bands.json`, bandsJSON, function (err) {
-    err ? console.log(err) : console.log("Bands JSON file saved");
+  if (Object.keys(bands).length === 0) {
+      console.log("Re-run program with valid artist ID");
+  }
 
-  });
-
-  const bandsMembersJSON = JSON.stringify(bandsMembers);
-  fs.writeFile(`${seedBandId}-bandsMembers.json`, bandsMembersJSON, function (err) {
-    err ? console.log(err) : console.log("Bands-Members JSON file saved");
-  });
-
-  const musiciansJSON = JSON.stringify(musicians);
-  fs.writeFile(`${seedBandId}-musicians.json`, musiciansJSON, function (err) {
-    err ? console.log(err) : console.log("Musicians JSON file saved");
-  });
 };
 
-spider(355457);
-// getBand(355457);
-
-// getArtist(355457);
+spider(argv[2]);

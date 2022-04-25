@@ -9,6 +9,7 @@ Note: To get an Artist ID, look them up on discogs.com. The artist's page will h
 ## Quickstart
 
 1. `yarn install` to install dependencies
-2. Edit the function invokation to `spider()` at the bottom of `index.js`, passing in a valid discogs artist ID to seed from
-3. Update the value of `maxBandsToReturn` as appropriate
-4.  `node index.js`
+2. `yarn start [GROUP_ID] [MAX_#_GROUPS] [REQUESTS_PER_MIN]`, passing in a valid discogs artist ID to seed from, and the maximum number of bands to return (do not include square brackets)
+    - `[GROUP_ID]` - a valid discogs artist ID to seed
+    - `[MAX_#_GROUPS]` - max. number of musical groups to return (Default set at 10)
+    - `[REQUESTS_PER_MIN]` - max number of API requests per minute. Default is 25 due to Discog's rate limiting of unauthenticated requests

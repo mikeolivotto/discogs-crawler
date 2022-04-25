@@ -3,9 +3,19 @@ var Bottleneck = require("bottleneck/es5");
 fs = require("fs");
 
 const { argv } = require('process');
+// argv[2] = artist ID
+// argv[3] = number of bands to return
+// argv[4] = maximum number of requests per minute
 
-const max25pm = new Bottleneck({
-  minTime: 2600, // 1000 ms per minute
+const requestsPerMinute = argv[4] || 25;
+const calcultateTimePerRequest = () => {
+    // the -1 is to give a minor buffer
+    return (60 / (requestsPerMinute - 1)) * 1000;
+}
+const minTimePerRequest = calcultateTimePerRequest();
+
+const limitRequests = new Bottleneck({
+    minTime: minTimePerRequest
 });
 
 const getArtistAPI = async (id) => {
@@ -13,18 +23,13 @@ const getArtistAPI = async (id) => {
   return response;
 };
 
-const getArtist = max25pm.wrap(getArtistAPI);
+const getArtist = limitRequests.wrap(getArtistAPI);
 
-// [band id, band name]
 let bands = {};
-
-// [band id, person id]... {band: [members]}
 let bandsMembers = {};
-
-// [person id, person name]
 let musicians = {};
 
-const maxBandsToReturn = 2;
+const maxBandsToReturn = argv[3] || 10;
 
 const getBand = async (bandId) => {
   try {
